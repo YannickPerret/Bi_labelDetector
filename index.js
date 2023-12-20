@@ -28,7 +28,14 @@ fastify.post('/analyze', async (request, reply) => {
         }
         const { url, maxLabel, minConfidence } = request.body;
 
-        const data = await VisionDetector.analyze(url, maxLabel, minConfidence);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw `HTTP error! status: ${response.status}`
+        }
+        const arrayBuffer = await response.arrayBuffer();
+            
+
+        const data = await VisionDetector.analyze(arrayBuffer, maxLabel, minConfidence);
         if (data.Labels.length === 0) {
             throw "No labels found"
         }
