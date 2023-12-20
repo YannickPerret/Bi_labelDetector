@@ -23,9 +23,13 @@ fastify.post('/analyze', async (request, reply) => {
         if (!request.body.url) {
             throw "No url provided"
         }
-        else if (!request.body.maxLabel || !request.body.minConfidence) {
+        if (!request.body.maxLabel || !request.body.minConfidence) {
             throw "No maxLabels or minConfidence or label provided, using default values"
         }
+        if (typeof request.body.maxLabel !== 'number' || typeof request.body.minConfidence !== 'number') {
+            throw "maxLabel or minConfidence is not a number"
+        }
+        
         const { url, maxLabel, minConfidence } = request.body;
 
         const response = await fetch(url);
