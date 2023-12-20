@@ -1,4 +1,4 @@
-const fastify = require('fastify')({ logger: true })
+const fastify = require('fastify')({ logger: true, level: 'info' })
 const cors = require('@fastify/cors')
 const LabelDetector = require("./lib/labelDetector");
 require("dotenv").config();
@@ -22,21 +22,21 @@ fastify.register(cors, {
 fastify.post('/analyze', async (request, reply) => {
     // reçoit une url aws en entrée et renvoie un json avec les labels et les confidences
     try{
+        console.log(request.body);
+
         if (!request.body.url) {
-            throw new Error("No url provided");
+            throw "No url provided"
         }
         else if (!request.body.maxLabel || !request.body.minConfidence) {
-            throw new Error("No maxLabels or minConfidence or label provided, using default values");
+            throw "No maxLabels or minConfidence or label provided, using default values"
         }
-        const maxLabel = request.body.maxLabel;
-        const minConfidence = request.body.minConfidence;
+        const { url, maxLabel, minConfidence } = request.body;
 
-        const data = await VisionDetector.analyze(request.body.url, maxLabel, minConfidence);
+        const data = await VisionDetector.analyze(url, maxLabel, minConfidence);
         if (data.Labels.length === 0) {
-            throw new Error("No labels found");
+            throw "No labels found"
         }
         reply.send({message: 'Image analyzed with success', data: data});
-    
     }
     catch(e){
         console.error(e);
@@ -45,9 +45,11 @@ fastify.post('/analyze', async (request, reply) => {
 })
   
   // Run the server!
-fastify.listen({ port: 3000 }, (err) => {
+fastify.listen({ port: process.env.API_PORT }, (err) => {
     if (err) {
         fastify.log.error(err)
         process.exit(1)
     }
+
+    console.log(`\x1b[33m[LABELDETECTOR]\x1b[0m : server listening on ${fastify.server.address().port}`)
 })
