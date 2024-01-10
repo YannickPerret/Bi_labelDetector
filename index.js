@@ -2,7 +2,16 @@ const fastify = require('fastify')({ logger: true, level: 'info' })
 const cors = require('@fastify/cors')
 const LabelDetector = require("./lib/labelDetector");
 const { db } = require("./lib/database/database")
-require("dotenv").config();
+const fs = require('fs');
+const path = require('path');
+const dotenv = require("dotenv");
+
+let dotEnvPath = path.join(__dirname, "..", ".env");
+
+if (!fs.existsSync(dotEnvPath)) {
+    dotEnvPath = path.join(__dirname, ".env");
+}
+dotenv.config({ path: dotEnvPath });
 
 const VisionDetector = LabelDetector.createClient({
     cloud: process.env.CLOUD_NAME,
@@ -83,8 +92,6 @@ fastify.post('/download', async (request, reply) => {
         reply.header('Content-Disposition', `attachment; filename=${fileName}`);
         reply.header('Content-Type', 'text/plain');
         reply.send(fileContent);
-
-        
     }
     catch (e) {
         console.error(e);
@@ -94,7 +101,7 @@ fastify.post('/download', async (request, reply) => {
 
 
 // Run the server!
-fastify.listen({ port: process.env.API_PORT }, (err) => {
+fastify.listen({ port: process.env.LABEL_API_PORT }, (err) => {
     if (err) {
         fastify.log.error(err)
         process.exit(1)
