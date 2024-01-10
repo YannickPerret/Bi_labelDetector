@@ -4,8 +4,8 @@ const LabelDetector = require("./lib/labelDetector");
 require("dotenv").config();
 
 const VisionDetector = LabelDetector.createClient({
-    cloud:'AWS', region: 
-    process.env.AWS_REGION, 
+    cloud: process.env.CLOUD_NAME,
+    region: process.env.AWS_REGION,
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
@@ -19,7 +19,7 @@ fastify.register(cors, {
 // Declare a route
 fastify.post('/analyze', async (request, reply) => {
     // reçoit une url aws en entrée et renvoie un json avec les labels et les confidences
-    try{
+    try {
         if (!request.body.url) {
             throw "No url provided"
         }
@@ -29,7 +29,7 @@ fastify.post('/analyze', async (request, reply) => {
         if (typeof request.body.maxLabel !== 'number' || typeof request.body.minConfidence !== 'number') {
             throw "maxLabel or minConfidence is not a number"
         }
-        
+
         const { url, maxLabel, minConfidence } = request.body;
 
         const response = await fetch(url);
@@ -37,21 +37,22 @@ fastify.post('/analyze', async (request, reply) => {
             throw `HTTP error! status: ${response.status}`
         }
         const arrayBuffer = await response.arrayBuffer();
-            
+
 
         const data = await VisionDetector.analyze(arrayBuffer, maxLabel, minConfidence);
         if (data.Labels.length === 0) {
             throw "No labels found"
         }
-        reply.send({message: 'Image analyzed with success', data: data});
+        console.log(data, url);
+        reply.send({ message: 'Image analyzed with success', data: data });
     }
-    catch(e){
+    catch (e) {
         console.error(e);
         reply.status(500).send({ error: e.message });
     }
 })
-  
-  // Run the server!
+
+// Run the server!
 fastify.listen({ port: process.env.API_PORT }, (err) => {
     if (err) {
         fastify.log.error(err)
