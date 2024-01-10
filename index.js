@@ -1,6 +1,7 @@
 const fastify = require('fastify')({ logger: true, level: 'info' })
 const cors = require('@fastify/cors')
 const LabelDetector = require("./lib/labelDetector");
+const { db } = require("./lib/database/database")
 require("dotenv").config();
 
 const VisionDetector = LabelDetector.createClient({
@@ -15,6 +16,18 @@ fastify.register(cors, {
     methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type']
 })
+
+try {
+    db.createDatabase(process.env.RETHINK_DB).finally(() => {
+        db.createTable('images').finally(() => {
+            console.log(`\x1b[33m[LABELDETECTOR]\x1b[0m : database ${process.env.RETHINK_DB} and table images created`)
+        })
+    })
+}
+catch (e) {
+    console.error(e);
+}
+
 
 // Declare a route
 fastify.post('/analyze', async (request, reply) => {
@@ -43,7 +56,11 @@ fastify.post('/analyze', async (request, reply) => {
         if (data.Labels.length === 0) {
             throw "No labels found"
         }
-        console.log(data, url);
+
+        if (db.getStatus()) {
+            await db.insert('images', { labelModel: data.LabelModelVersion, labels: data.Labels, MaxLabel: maxLabel, MinConfidence: minConfidence, url: url });
+        }
+
         reply.send({ message: 'Image analyzed with success', data: data });
     }
     catch (e) {
@@ -51,6 +68,25 @@ fastify.post('/analyze', async (request, reply) => {
         reply.status(500).send({ error: e.message });
     }
 })
+
+// Declare a route to download SQL Insert file of analyzed images from Rethinkdb
+fastify.get('/download', async (request, reply) => {
+    try {
+        const data = await db.getByWithFilter('images', 'url', request.body.url)
+        const fileName = 'insert.sql';
+        const fileContent = data.map((image) => {
+            return `INSERT INTO images (id, url, labels) VALUES ('${image.id}', '${image.url}', '${JSON.stringify(image.labels)}');\n`
+        }).join('');
+        reply.header('Content-Disposition', `attachment; filename=${fileName}`);
+        reply.header('Content-Type', 'text/plain');
+        reply.send(fileContent);
+    }
+    catch (e) {
+        console.error(e);
+        reply.status(500).send({ error: e.message });
+    }
+})
+
 
 // Run the server!
 fastify.listen({ port: process.env.API_PORT }, (err) => {
