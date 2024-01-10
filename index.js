@@ -70,22 +70,27 @@ fastify.post('/analyze', async (request, reply) => {
 })
 
 // Declare a route to download SQL Insert file of analyzed images from Rethinkdb
-fastify.get('/download', async (request, reply) => {
+fastify.post('/download', async (request, reply) => {
     try {
-        const data = await db.getByWithFilter('images', 'url', request.body.url)
+        const data = await db.get('images', 'url', request.body.url);
+        if (!data) {
+            throw new Error("No data found for the provided URL");
+        }
+
         const fileName = 'insert.sql';
-        const fileContent = data.map((image) => {
-            return `INSERT INTO images (id, url, labels) VALUES ('${image.id}', '${image.url}', '${JSON.stringify(image.labels)}');\n`
-        }).join('');
+        let fileContent = `INSERT INTO images (id, url, labels) VALUES ('${data.id}', '${data.url}', '${JSON.stringify(data.labels)}');\n`;
+
         reply.header('Content-Disposition', `attachment; filename=${fileName}`);
         reply.header('Content-Type', 'text/plain');
         reply.send(fileContent);
+
+        
     }
     catch (e) {
         console.error(e);
         reply.status(500).send({ error: e.message });
     }
-})
+});
 
 
 // Run the server!
