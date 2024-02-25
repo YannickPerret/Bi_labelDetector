@@ -40,7 +40,6 @@ catch (e) {
 
 // Declare a route
 fastify.post('/analyze', async (request, reply) => {
-    // reçoit une url aws en entrée et renvoie un json avec les labels et les confidences
     try {
         if (!request.body.url) {
             throw "No url provided"
@@ -100,7 +99,6 @@ fastify.post('/download', async (request, reply) => {
 });
 
 
-// Run the server!
 fastify.listen({ port: process.env.LABEL_API_PORT }, (err) => {
     if (err) {
         fastify.log.error(err)
