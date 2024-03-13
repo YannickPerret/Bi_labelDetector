@@ -1,4 +1,3 @@
-// ATTENTION NODEJS VERSION 21
 const LabelDetector = require("../lib/labelDetector");
 const fs = require('fs');
 const path = require('path');

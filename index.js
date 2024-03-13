@@ -39,7 +39,7 @@ catch (e) {
 
 
 // Declare a route
-fastify.post('/analyze', async (request, reply) => {
+fastify.post('/api/analyze', async (request, reply) => {
     try {
         if (!request.body.url) {
             throw "No url provided"
@@ -50,6 +50,13 @@ fastify.post('/analyze', async (request, reply) => {
         if (typeof request.body.maxLabel !== 'number' || typeof request.body.minConfidence !== 'number') {
             throw "maxLabel or minConfidence is not a number"
         }
+        if (request.body.maxLabel < 1 || request.body.maxLabel > 100) {
+            throw "maxLabel must be between 1 and 100"
+        }
+        if (request.body.minConfidence < 0 || request.body.minConfidence > 100) {
+            throw "minConfidence must be between 0 and 100"
+        }
+
 
         const { url, maxLabel, minConfidence } = request.body;
 
@@ -98,12 +105,10 @@ fastify.post('/download', async (request, reply) => {
     }
 });
 
-
-fastify.listen({ port: process.env.LABEL_API_PORT }, (err) => {
+fastify.listen({ port: process.env.LABEL_API_PORT, host: '::' }, (err) => {
     if (err) {
         fastify.log.error(err)
         process.exit(1)
     }
-
     console.log(`\x1b[33m[LABELDETECTOR]\x1b[0m : server listening on ${fastify.server.address().port}`)
 })
