@@ -105,7 +105,7 @@ fastify.post('/download', async (request, reply) => {
     }
 });
 
-fastify.listen({ port: process.env.LABEL_API_PORT, host: '::' }, (err) => {
+fastify.listen({ port: process.env.LABEL_API_PORT, host: process.env.LABELDETECTOR_BASE_URL }, (err) => {
     if (err) {
         fastify.log.error(err)
         process.exit(1)
